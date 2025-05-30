@@ -80,7 +80,7 @@ class JWTUtils:
             raise ValueError("JWT configuration is not loaded")
         return self.DOMAIN
 
-    def generate_token(self, payload: dict) -> str:
+    async def generate_token(self, payload: dict) -> str:
         """Generate a JWT token using the provided payload."""
         if not self.CLIENT_ID or not self.CLIENT_SECRET or not self.DOMAIN:
             raise ValueError("JWT configuration is not loaded")
@@ -100,7 +100,7 @@ class JWTUtils:
 
         return token
 
-    def validate_token(self, request: Request) -> dict:
+    async def validate_token(self, request: Request) -> dict:
         """Validate a JWT token and return the payload if valid."""
         token = self.extract_token(request)
         try:
@@ -115,7 +115,7 @@ class JWTUtils:
 
         return self.decode_token(token)
 
-    def decode_token(self, token: str) -> dict:
+    async def decode_token(self, token: str) -> dict:
         if self.DOMAIN is None:
             logger.error("JWT domain not configured")
             raise AuthError("JWT domain not configured", status_code=500)

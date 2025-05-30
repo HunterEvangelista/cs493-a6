@@ -9,6 +9,6 @@ async def validation_exception_handler(
     return JSONResponse(
         status_code=400,
         content={
-            "Error": "The request body is missing at least one of the required attributes"
+            "Error": "The request body is invalid"
         },
     )

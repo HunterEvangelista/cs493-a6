@@ -1,9 +1,12 @@
+from typing import Annotated
+
 from authlib.integrations.starlette_client import OAuth
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.dependencies import authenticate_request
 from app.exceptions import validation_exception_handler
 from app.models.auth import DecodedToken
 from app.routers import users
@@ -61,7 +64,8 @@ async def handle(request, exc):
 
 
 @app.get("/")
-async def root():
+async def root(authenticated: Annotated[bool, Depends(authenticate_request)]):
+    print("Authenticated dep ran: ", authenticated)
     return JSONResponse(content={"message": "connected"})
 
 
