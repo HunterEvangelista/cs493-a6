@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cs493-a6"
+version = "0.1.0"
+description = "FastAPI application for CS493 Assignment 6"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "fastapi>=0.115.12",
+    "uvicorn>=0.34.2",
+    "authlib>=1.6.0",
+    "python-dotenv>=1.1.0",
+    "google-cloud-datastore>=2.21.0",
+    "google-cloud-secret-manager>=2.23.3",
+    "pydantic>=2.11.5",
+    "httpx>=0.28.1",
+]
+
+[tool.ruff]
+line-length = 80
+target-version = "py38"
+
+[tool.ruff.lint]
+extend-select = ["I", "E", "W", "F", "B", "C90", "UP", "SIM", "PL", "TID"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
