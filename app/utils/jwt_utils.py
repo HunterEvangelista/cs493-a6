@@ -22,7 +22,7 @@ class JWTUtils:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(JWTUtils, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
@@ -41,7 +41,9 @@ class JWTUtils:
     def _get_secret(self, secret_id):
         try:
             name = f"projects/evangelh493a3/secrets/{secret_id}/versions/latest"
-            resp = self._secret_client.access_secret_version(request={"name": name})
+            resp = self._secret_client.access_secret_version(
+                request={"name": name}
+            )
         except Exception as e:
             logger.error(f"Failed to retrieve secret {secret_id}: {e}")
             raise
@@ -85,7 +87,9 @@ class JWTUtils:
         if not self.CLIENT_ID or not self.CLIENT_SECRET or not self.DOMAIN:
             raise ValueError("JWT configuration is not loaded")
 
-        return jwt.encode(payload, self.CLIENT_SECRET, algorithm=self.ALGORITHM[0])
+        return jwt.encode(
+            payload, self.CLIENT_SECRET, algorithm=self.ALGORITHM[0]
+        )
 
     def extract_token(self, request: Request) -> str:
         """Extracts the JWT from the header"""
@@ -107,13 +111,13 @@ class JWTUtils:
             unverified_header = jwt.get_unverified_header(token)
         except jwt.PyJWTError as e:
             logger.error(f"Invalid header: {e}")
-            raise AuthError("Invalid header", status_code=401)
+            raise
 
         if unverified_header["alg"] not in self.ALGORITHM:
             logger.error(f"Invalid algorithm: {unverified_header['alg']}")
             raise AuthError("Invalid algorithm", status_code=401)
 
-        return self.decode_token(token)
+        return await self.decode_token(token)
 
     async def decode_token(self, token: str) -> dict:
         if self.DOMAIN is None:
@@ -136,13 +140,13 @@ class JWTUtils:
                 )
             except jwt.ExpiredSignatureError:
                 logger.error("Token has expired")
-                raise AuthError("Token has expired", status_code=401)
+                raise
             except jwt.MissingRequiredClaimError:
                 logger.error("Invalid claims")
-                raise AuthError("Invalid claims", status_code=401)
+                raise
             except Exception:
                 logger.error("Invalid token")
-                raise AuthError("Invalid token", status_code=401)
+                raise
 
             return payload
 

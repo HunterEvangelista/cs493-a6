@@ -1,10 +1,13 @@
 import logging
+from typing import Annotated
 
 import requests
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
+from app.dependencies import get_user_info
 from app.models.auth import LoginPost, LoginResponse
+from app.models.users import User, UserClient, UserCore, UserRoles
 from app.utils.jwt_utils import JWTUtils
 
 logging.basicConfig(level=logging.INFO)
@@ -71,3 +74,33 @@ async def login(login: LoginPost):
         logger.error(f"Error response from auth0: {content}")
         return JSONResponse(content=error_responses[401], status_code=401)
     return LoginResponse(token=content["id_token"])
+
+
+# get all users
+# must have all 9 pre-created users from datastore
+
+
+@router.get("", response_model=list[UserCore])
+async def get_users(user: Annotated[User, Depends(get_user_info)]):
+    if user is None:
+        return JSONResponse(content=error_responses[401], status_code=401)
+
+    if user.role != UserRoles.ADMIN.value:
+        return JSONResponse(content=error_responses[403], status_code=403)
+
+    user_client = UserClient()
+
+    return await user_client.get_all_users()
+
+
+@router.get("/{user_id}", response_model=UserCore)
+async def get_user(user_id: int, user: Annotated[User, Depends(get_user_info)]):
+    if user is None:
+        return JSONResponse(content=error_responses[401], status_code=401)
+
+    if user.role != UserRoles.ADMIN.value:
+        return JSONResponse(content=error_responses[403], status_code=403)
+
+    user_client = UserClient()
+
+    return await user_client.get_user(user_id)
