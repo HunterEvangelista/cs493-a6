@@ -1,0 +1,26 @@
+{
+  "lsp": {
+    "pylsp": {
+      "binary": {
+        "path": "./venv/bin/pylsp",
+        "arguments": []
+      },
+      "settings": {
+        "pylsp": {
+          "plugins": {
+            "jedi": {
+              "environment": "./venv/bin/python",
+              "extra_paths": ["."]
+            }
+          }
+        }
+      }
+    },
+    "ruff": {
+      "binary": {
+        "path": "./venv/bin/ruff",
+        "arguments": ["server"]
+      }
+    }
+  }
+}
