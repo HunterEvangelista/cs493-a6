@@ -18,3 +18,7 @@ class DecodedToken(BaseModel):
 class LoginPost(BaseModel):
     username: str
     password: str
+
+
+class LoginResponse(BaseModel):
+    token: str
