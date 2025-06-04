@@ -24,7 +24,7 @@ async def authenticate_request(request: Request) -> bool:
 async def get_user_info(
     request: Request,
     authenticated: Annotated[bool, Depends(authenticate_request)],
-) -> User:
+) -> User | None:
     if not authenticated:
         return None
 

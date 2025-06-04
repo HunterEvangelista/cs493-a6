@@ -39,7 +39,7 @@ class UserClient:
         self.client = datastore.Client(database="tarpaulin")
         self.USERS = "Users"
 
-    async def get_user_by_sub(self, sub) -> User:
+    async def get_user_by_sub(self, sub) -> User | None:
         query = self.client.query(kind=self.USERS)
         query.add_filter(property_name="sub", operator="=", value=sub)
         try:
@@ -62,6 +62,24 @@ class UserClient:
         for entity in entities:
             entity["id"] = entity.key.id
         return [UserCore(**entity) for entity in entities]
+
+    async def get_user_by_id(self, id: int) -> User | None:
+        user_key = self.client.key(self.USERS, id)
+        query = self.client.query(kind=self.USERS)
+        query.key_filter(user_key, "=")
+        try:
+            entity = list(query.fetch())
+            if len(entity) == 0:
+                raise UserException("User not found")
+            entity = entity[0]
+            entity[0]["id"] = entity.key.id
+        except Exception as e:
+            logger.error(f"Error fetching user by sub: {e}")
+            raise
+
+        if entity:
+            return User(**entity)
+        return None
 
     async def get_instructur_courses(self, id: int):
         pass

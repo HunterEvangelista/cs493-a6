@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Any, Dict
 
 import requests
 from fastapi import APIRouter, Depends
@@ -46,7 +46,7 @@ error_responses = {
 router = APIRouter(
     prefix="/users",
     tags=["users"],
-    responses=error_responses,
+    responses={**error_responses},
 )
 
 jwt_utils = JWTUtils()
@@ -103,4 +103,4 @@ async def get_user(user_id: int, user: Annotated[User, Depends(get_user_info)]):
 
     user_client = UserClient()
 
-    return await user_client.get_user(user_id)
+    return await user_client.get_user_by_id(user_id)
