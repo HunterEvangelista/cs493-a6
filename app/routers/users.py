@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.dependencies import get_user_info
 from app.models.auth import LoginPost, LoginResponse
-from app.models.users import User, UserClient, UserCore, UserRoles
+from app.models.users import User, UserClient, UserCore, UserRoles, UserResponse
 from app.utils.jwt_utils import JWTUtils
 
 logging.basicConfig(level=logging.INFO)
@@ -81,7 +81,7 @@ async def login(login: LoginPost):
 
 
 @router.get("", response_model=list[UserCore])
-async def get_users(user: Annotated[User, Depends(get_user_info)]):
+async def get_users(user: Annotated[User | None, Depends(get_user_info)]):
     if user is None:
         return JSONResponse(content=error_responses[401], status_code=401)
 
@@ -93,14 +93,23 @@ async def get_users(user: Annotated[User, Depends(get_user_info)]):
     return await user_client.get_all_users()
 
 
-@router.get("/{user_id}", response_model=UserCore)
-async def get_user(user_id: int, user: Annotated[User, Depends(get_user_info)]):
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(user_id: int, user: Annotated[User | None, Depends(get_user_info)]):
     if user is None:
         return JSONResponse(content=error_responses[401], status_code=401)
 
-    if user.role != UserRoles.ADMIN.value:
+    if user.role != UserRoles.ADMIN.value and user_id != user.id:
         return JSONResponse(content=error_responses[403], status_code=403)
 
     user_client = UserClient()
 
-    return await user_client.get_user_by_id(user_id)
+    try:
+        retrieved_user = await user_client.get_user_by_id(user_id)
+        if retrieved_user is None:
+            raise Exception
+    except Exception:
+        return JSONResponse(content=error_responses[403], status_code=403)
+
+    # if user is instructor, get courses they are teaching
+    #
+    # if user is a student, get the courses they are enrolled in

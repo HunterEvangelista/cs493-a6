@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional, Union
 
 from google.cloud import datastore
 from pydantic import BaseModel
@@ -29,7 +29,7 @@ class User(UserCore):
     username: str
 
 
-class Instructor(UserCore):
+class UserResponse(UserCore):
     avataor_url: Optional[str]
     courses: list[str]
 
@@ -38,6 +38,7 @@ class UserClient:
     def __init__(self):
         self.client = datastore.Client(database="tarpaulin")
         self.USERS = "Users"
+        self.USER_AVATAR = "UserAvatar"
 
     async def get_user_by_sub(self, sub) -> User | None:
         query = self.client.query(kind=self.USERS)
@@ -81,8 +82,46 @@ class UserClient:
             return User(**entity)
         return None
 
-    async def get_instructur_courses(self, id: int):
-        pass
+    async def get_user_role(
+        self, access: Union[Literal["id"], Literal["sub"]], id
+    ) -> str:
+        """
+        Returns the role of the given user
+        """
 
-    async def get_student_courses(self, id: int):
-        pass
+        if access == "id":
+            user = await self.get_user_by_id(id)
+        else:
+            user = await self.get_user_by_sub(id)
+
+        if user is None:
+            logger.error(f"Could not get user via {access} with token {id}")
+            raise UserException("User not found")
+
+        return user.role
+
+    async def verify_user_has_avatar(self, id: int) -> bool:
+        try:
+            user_key = self.client.key(self.USERS, id)
+            query = self.client.query(kind=self.USER_AVATAR, ancestor=user_key)
+            avatars = list(query.fetch(limit=1))
+            return len(avatars) > 0
+
+        except Exception as e:
+            logger.error(f"Error checking user avatar for user {id}: {e}")
+            return False
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    async def main():
+        user = UserClient()
+        id = 5081054809423871
+        valid = await user.verify_user_has_avatar(id)
+        if valid:
+            print(f"User {id} has avatar")
+        else:
+            print("No avatar")
+
+    asyncio.run(main())
