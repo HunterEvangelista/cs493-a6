@@ -27,7 +27,7 @@ class StorageHandler:
             raise
 
     @staticmethod
-    def get_avatar(user_id: int) -> str:
+    def get_avatar(user_id: int) -> io.BytesIO:
         storage_client = storage.Client()
         bucket = storage_client.bucket(StorageHandler.BUCKET_NAME)
         blob = bucket.blob(f"{user_id}.png")

@@ -34,6 +34,10 @@ class UserResponse(UserCore):
     courses: list[str]
 
 
+class AvatarResponse(BaseModel):
+    avatar_url: str
+
+
 class UserClient:
     def __init__(self):
         self.client = datastore.Client(database="tarpaulin")
@@ -110,6 +114,33 @@ class UserClient:
         except Exception as e:
             logger.error(f"Error checking user avatar for user {id}: {e}")
             return False
+
+    async def create_user_avatar_record(self, user_id: int) -> None:
+        try:
+            # no need if user already has avatar
+            has_avatar = await self.verify_user_has_avatar(user_id)
+            if has_avatar:
+                logger.info(
+                    f"User {user_id} already has an avatar record, skipping creation"
+                )
+                return
+
+            user_key = self.client.key(self.USERS, user_id)
+
+            avatar_key = self.client.key(self.USER_AVATAR, parent=user_key)
+            avatar_entity = datastore.Entity(key=avatar_key)
+
+            avatar_entity["file"] = f"{user_id}.png"
+
+            self.client.put(avatar_entity)
+
+            logger.info(f"Created avatar record for user {user_id}")
+
+        except Exception as e:
+            logger.error(
+                f"Error creating avatar record for user {user_id}: {e}"
+            )
+            raise
 
 
 if __name__ == "__main__":
