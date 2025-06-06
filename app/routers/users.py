@@ -145,6 +145,7 @@ async def get_user_avatar(
         file_obj = StorageHandler.get_avatar(user_id)
         file_bytes = file_obj.read()
 
+        logger.info("Returning Response with file bytes")
         return Response(content=file_bytes, media_type="image/png")
     except Exception as e:
         logger.error(f"Error retrieving avatar for user {user_id}: {e}")
@@ -165,7 +166,7 @@ async def upload_user_avatar(
         return JSONResponse(content=error_responses[403], status_code=403)
 
     user_client = UserClient()
-    scheme, netloc, *_ = request.components
+    scheme, netloc, *_ = request.url.components
 
     try:
         StorageHandler.upload_avatar(file, f"{user_id}.png")

@@ -34,7 +34,8 @@ async def get_user_info(
     token = jwt_utils.extract_token(request)
     user_info = await jwt_utils.decode_token(token)
     try:
-        user = await user_client.get_user_by_sub(user_info["sub"])
+        sub = user_info["sub"]
+        user = await user_client.get_user_by_sub(sub)
     except Exception as e:
         logger.error(f"Error fetching user: {str(e)}")
         return None

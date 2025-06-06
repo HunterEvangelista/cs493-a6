@@ -77,7 +77,7 @@ class UserClient:
             if len(entity) == 0:
                 raise UserException("User not found")
             entity = entity[0]
-            entity[0]["id"] = entity.key.id
+            entity["id"] = entity.key.id
         except Exception as e:
             logger.error(f"Error fetching user by sub: {e}")
             raise
@@ -139,6 +139,30 @@ class UserClient:
         except Exception as e:
             logger.error(
                 f"Error creating avatar record for user {user_id}: {e}"
+            )
+            raise
+
+    async def delete_user_avatar_record(self, user_id: int) -> None:
+        try:
+            has_avatar = await self.verify_user_has_avatar(user_id)
+            if not has_avatar:
+                logger.info(
+                    f"User {user_id} has no avatar record, skipping deletion"
+                )
+                return
+
+            user_key = self.client.key(self.USERS, user_id)
+            query = self.client.query(kind=self.USER_AVATAR, ancestor=user_key)
+            avatars = list(query.fetch())
+
+            for avatar in avatars:
+                self.client.delete(avatar.key)
+
+            logger.info(f"Deleted avatar record for user {user_id}")
+
+        except Exception as e:
+            logger.error(
+                f"Error deleting avatar record for user {user_id}: {e}"
             )
             raise
 
