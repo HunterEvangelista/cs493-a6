@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from app.dependencies import authenticate_request
 from app.exceptions import validation_exception_handler
 from app.models.auth import DecodedToken
-from app.routers import users
+from app.routers import courses, users
 from app.utils.jwt_utils import JWTUtils
 
 app = FastAPI()
@@ -28,6 +28,7 @@ oauth.register(
 )
 
 app.include_router(users.router)
+app.include_router(courses.router)
 
 app.add_middleware(
     CORSMiddleware,

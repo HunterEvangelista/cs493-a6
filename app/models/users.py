@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Literal, Optional, Union
 
 from google.cloud import datastore
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,8 +30,10 @@ class User(UserCore):
 
 
 class UserResponse(UserCore):
-    avataor_url: Optional[str]
-    courses: list[str]
+    model_config = ConfigDict(exclude_none=True)
+
+    avatar_url: Optional[str]
+    courses: Optional[list[str]]
 
 
 class AvatarResponse(BaseModel):

@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse, Response
 
 from app.dependencies import get_user_info
 from app.models.auth import LoginPost, LoginResponse
+from app.models.courses import CourseClient
 from app.models.users import (
     AvatarResponse,
     User,
@@ -21,34 +22,12 @@ from app.utils.storage_utils import StorageHandler
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-"""
-POST login
-
-GET users
-- admin only
-
-GET users/:id
-- admin or JWT matches user
-- must have avatar and courses (for instructors and students)
-
-POST users/:id/avatar
-- user with matching JWT
-- file must be in google cloud storage
-
-GET /users/:id/avatar
-- User with matching JWT
-- read and return file from google cloud storage
-
-DELETE /users/:id/avatar
-- User with matching JWT
-- delete file from google cloud storage
-"""
 
 error_responses = {
     400: {"Error": "The request body is invalid"},
     401: {"Error": "Unauthorized"},
     403: {"Error": "You don't have permission on this resource"},
-    404: {"Error": "Not Found"},
+    404: {"Error": "Not found"},
 }
 
 router = APIRouter(
@@ -101,9 +80,13 @@ async def get_users(user: Annotated[User | None, Depends(get_user_info)]):
     return await user_client.get_all_users()
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get(
+    "/{user_id}", response_model=UserResponse, response_model_exclude_none=True
+)
 async def get_user(
-    user_id: int, user: Annotated[User | None, Depends(get_user_info)]
+    user_id: int,
+    user: Annotated[User | None, Depends(get_user_info)],
+    request: Request,
 ):
     if user is None:
         return JSONResponse(content=error_responses[401], status_code=401)
@@ -112,6 +95,7 @@ async def get_user(
         return JSONResponse(content=error_responses[403], status_code=403)
 
     user_client = UserClient()
+    scheme, netloc, *_ = request.url.components
 
     try:
         retrieved_user = await user_client.get_user_by_id(user_id)
@@ -120,9 +104,29 @@ async def get_user(
     except Exception:
         return JSONResponse(content=error_responses[403], status_code=403)
 
-    # if user is instructor, get courses they are teaching
-    #
-    # if user is a student, get the courses they are enrolled in
+    avatar_url = (
+        f"{scheme}://{netloc}/users/{user_id}/avatar"
+        if await user_client.verify_user_has_avatar(user_id)
+        else None
+    )
+
+    if retrieved_user.role == UserRoles.ADMIN.value:
+        course_urls = None
+    else:
+        course_client = CourseClient()
+        course_ids = await course_client.get_user_courses(user_id)
+        course_urls = [
+            f"{scheme}://{netloc}/courses/{course_id}"
+            for course_id in course_ids
+        ]
+
+    return UserResponse(
+        id=user_id,
+        role=retrieved_user.role,
+        sub=retrieved_user.sub,
+        avatar_url=avatar_url,
+        courses=course_urls,
+    )
 
 
 @router.get("/{user_id}/avatar")
